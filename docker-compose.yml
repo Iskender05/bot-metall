@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mir_metalla_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "4200:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - mir_metalla_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  migrate:
+    build: ./src
+    container_name: mir_metalla_migrate
+    env_file:
+      - ${APP_ENV_FILE:-.env}
+    command: ["alembic", "upgrade", "head"]
+    working_dir: /app
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mir_metalla_network
+
+  bot:
+    build: ./src
+    container_name: mir_metalla_bot
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-.env}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - mir_metalla_network
+
+volumes:
+  db_data:
+
+networks:
+  mir_metalla_network:
+    driver: bridge
