@@ -34,9 +34,7 @@ def unsaved_outgoing_messages(
     result: list[str] = []
 
     for message in outgoing_messages or []:
-        message_type = message.get("type")
-        if message_type != "text":
-            result.append(f"Исходящее сообщение менеджера: {message_type or 'unknown'}")
+        if message.get("type") != "text":
             continue
 
         text = normalize_text(extract_out_text(message.get("value")))

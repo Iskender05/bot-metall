@@ -57,10 +57,7 @@ async def create_lead(chat_id: str):
 
 
 async def _process_chat(chat: dict) -> None:
-    if (
-        chat['chat_id'] in BLOCKED_USERS
-        or chat['last_message']['type'] == 'system'
-    ):
+    if chat['chat_id'] in BLOCKED_USERS:
         return
 
     chat_id = chat["chat_id"]

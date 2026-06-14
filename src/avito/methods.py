@@ -476,22 +476,24 @@ async def fetch_chat_messages_v3(
     return all_messages
 
 
+def is_manual_outgoing_text(message: Dict[str, Any]) -> bool:
+    return (
+        message.get("direction") == "out"
+        and (message.get("type") or "unknown") == "text"
+    )
+
+
 def extract_my_outgoing_messages(
     messages: List[Dict[str, Any]],
 ) -> List[Dict[str, Any]]:
-    """Возвращает ВСЕ сообщения, отправленные моим профилем (direction='out'), исключая system."""
     result: List[Dict[str, Any]] = []
 
     for m in messages or []:
-        if m.get("direction") != "out":
-            continue
-
-        msg_type = m.get("type") or "unknown"
-        if msg_type == "system":
+        if not is_manual_outgoing_text(m):
             continue
 
         result.append({
-            "type": msg_type,
+            "type": "text",
             "value": m.get("content") or {},
         })
 
@@ -514,8 +516,9 @@ def extract_new_user_text_until_last_my_reply(
         direction = m.get("direction")
         msg_type = m.get("type") or "unknown"
 
-        # Встретили первый out (самый новый out) => это и есть "мой последний ответ"
         if direction == "out":
+            if not is_manual_outgoing_text(m):
+                continue
             found_my_last_reply = True
             break
 
